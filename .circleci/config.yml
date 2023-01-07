@@ -159,13 +159,15 @@ commands:
 
   cache-save-yarn:
     steps:
+      - run:
+          name: Extract cache from docker image
+          command: .circleci/copy-docker-cache.sh
       - save_cache:
           key: fxa-yarn-07-{{ checksum "yarn.lock" }}
           paths:
             - /home/circleci/.yarn/berry
             - /home/circleci/project/.yarn/build-state.yml
-            - /home/circleci/project/.yarn/install-state.gzs
-
+            - /home/circleci/project/.yarn/install-state.gz
   cache-restore-yarn:
     steps:
       - restore_cache:
@@ -337,6 +339,9 @@ jobs:
     parameters:
       executor:
         type: executor
+      tag:
+        type: string
+        default: ci-base-latest
     executor: << parameters.executor >>
     steps:
       - setup_remote_docker:
@@ -344,14 +349,22 @@ jobs:
       - git-clone
       - cache-restore-yarn
       - run:
+          # This puts the global yarn cache in place accessible to the docker build
+          name: Hoist global cache
+          command: |
+            if [ -d /home/circleci/.yarn ]; then
+              cp -ra /home/circleci/.yarn ./.yarn-global
+            fi
+            mkdir -p .yarn-global
+      - run:
           name: Build docker fxa ci image
-          command: docker build . -f ./_dev/docker/ci-base/Dockerfile -t ci-base-latest
+          command: docker build . -f ./_dev/docker/ci-base/Dockerfile -t << parameters.tag >>
       - deploy:
           name: Push fxa ci image
           command: |
             docker login -u $DOCKER_USER_fxa_circleci -p $DOCKER_PASS_fxa_circleci
-            docker tag ci-base-latest << pipeline.parameters.docker-repo >>:ci-base-latest
-            docker push << pipeline.parameters.docker-repo >>:ci-base-latest
+            docker tag << parameters.tag >> << pipeline.parameters.docker-repo >>:<< parameters.tag >>
+            docker push << pipeline.parameters.docker-repo >>:<< parameters.tag >>
 
   # This deploys another base image. It's built on top of the image produced above. This
   # image has all the libraries needed for running UI tests automation in headless browsers.
@@ -532,9 +545,14 @@ jobs:
           name: Build and deploy Storybooks
           command: npx github:mozilla-fxa/storybook-gcp-publisher
 
+  # This step will pull the latest docker build, extract the yarn cache from it
+  # push it to the circleci cache so it can be used down the road to prevent
+  # fetches from npm.
   update-yarn-cache:
-    executor: default-executor
+    executor: docker-build-executor
     steps:
+      - checkout
+      - setup_remote_docker
       - cache-save-yarn
 
 workflows:
@@ -667,10 +685,12 @@ workflows:
               ignore: /.*/
       - deploy-fxa-ci-image:
           executor: docker-build-executor
+          tag: ci-latest
           filters:
             branches:
               only:
                 - main
+                - fix-yarn-cache
             tags:
               ignore: /.*/
       - deploy-fxa-ci-browser-image:
