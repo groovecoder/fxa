@@ -11,6 +11,11 @@ COPY --chown=circleci:circleci ./install /usr/local/bin/.
 # Copy over the source from the ci-base-latest tag.
 COPY --chown=circleci:circleci --from=0 /home/circleci/project .
 
+# Copy over the yarn cache
+COPY --chown=circleci:circleci --from=0 /home/circleci/.yarn /home/circleci/.
+
 # Install playwright browsers
 # One of the biggest culprits of slow install times is playwright since it downloads browser binaries
 RUN npx playwright install firefox;
+
+RUN cat base_ref

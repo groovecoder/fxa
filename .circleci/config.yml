@@ -367,8 +367,6 @@ jobs:
           version: 102.4.0esr
       - browser-tools/install-geckodriver:
           version: v0.32.0
-      - git-clone
-      - cache-restore-yarn
       # Copies the browsers the browsers that were installed above into a location accessible to the
       # docker build.
       - run: mkdir -p /home/circleci/project/install
@@ -671,6 +669,7 @@ workflows:
             branches:
               only:
                 - main
+                - add-yarn-cache-to-ci-base-browsers-latest
             tags:
               ignore: /.*/
       - deploy-fxa-ci-browser-image:
