@@ -4,20 +4,40 @@
 
 'use strict';
 
-const { assert } = require('chai');
-const util = require('node:util');
-const path = require('path');
-const {
-  auditRowCounts,
-  auditAge,
-  auditOrphanedRows,
-} = require('../../scripts/audit-tokens');
-const mocks = require(`../../test/mocks`);
-const config = require('../../config').getProperties();
-const log = mocks.mockLog();
-const { Account } = require('fxa-shared/db/models/auth/account');
-const { clearDb, scaffoldDb, connectToDb } = require('./db-helpers');
+import { assert } from 'chai';
+import util from 'node:util';
+import path from 'path';
+import { auditRowCounts, auditAge, auditOrphanedRows } from './audit-tokens';
+import Config from '../src/config';
+import { clearDb, connectToDb, scaffoldDb } from './db-helpers';
 
+import sinon from 'sinon';
+import { Account } from 'fxa-shared/db/models/auth';
+
+const LOG_METHOD_NAMES = [
+  'activityEvent',
+  'amplitudeEvent',
+  'begin',
+  'error',
+  'flowEvent',
+  'info',
+  'notifyAttachedServices',
+  'warn',
+  'summary',
+  'trace',
+  'debug',
+];
+function mockObject(methodNames: string[], baseObj?: any) {
+  return (methods?: any) => {
+    methods = methods || {};
+    return methodNames.reduce((object, name) => {
+      object[name] = methods[name] || sinon.spy(() => Promise.resolve());
+      return object;
+    }, baseObj || {});
+  };
+}
+
+const config = Config.getProperties();
 const exec = util.promisify(require('node:child_process').exec);
 const cwd = path.resolve(__dirname, '../..');
 
@@ -26,8 +46,10 @@ describe('#integration - scripts/audit-tokens', () => {
   const email = 'user1@test.com';
   const createdAt = new Date('2022-10').getTime();
   const lastAccessTime = new Date('2022-11').getTime();
+  let log: any = null;
 
   before(async () => {
+    log = mockObject(LOG_METHOD_NAMES)();
     await connectToDb(config, log);
     await clearDb();
     await scaffoldDb(uid, email, createdAt, lastAccessTime);
@@ -75,7 +97,7 @@ describe('#integration - scripts/audit-tokens', () => {
   });
 
   describe('cli', () => {
-    async function testScript(args) {
+    async function testScript(args: string) {
       // Note that logger output, directs to standard err.
       const { stderr, stdout } = await exec(
         `NODE_ENV=dev node -r esbuild-register scripts/audit-tokens.ts ${args}`,
@@ -89,7 +111,7 @@ describe('#integration - scripts/audit-tokens', () => {
     }
 
     it('applies no args', async () => {
-      const { stderr, stdout } = await testScript({});
+      const { stderr, stdout } = await testScript('');
       assert.isOk(/RowCount/.test(stderr));
       assert.isNotOk(/AgeAudit/.test(stderr));
       assert.isNotOk(/OrphanedRows/.test(stderr));

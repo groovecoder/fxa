@@ -5,14 +5,19 @@
 import program from 'commander';
 import { StatsD } from 'hot-shots';
 import { setupDatabase } from 'fxa-shared/db';
-import pckg from '../package.json';
+import packageJson from '../package.json';
+import Config from '../src/config';
+import mozlog from 'mozlog';
 
-const config = require('../config').getProperties();
-const statsd = new StatsD(config.statsd);
-const log = require('../lib/log')(config.log.level, 'audit-tokens', statsd);
+const config = Config.getProperties();
+
+const statsd = new StatsD(config.metrics);
 const knex = setupDatabase({
-  ...config.database.mysql.auth,
+  ...config.database.fxa,
 });
+
+const logFactory = mozlog(config.log);
+const log = logFactory('default');
 
 //#region Table Definitions
 /** Defines table and key column */
@@ -365,7 +370,7 @@ async function auditAll() {
 export async function run() {
   try {
     program
-      .version(pckg.version)
+      .version(packageJson.version)
       .option(
         '--grep <string>',
         'Regular expression to target a specific audit',
@@ -374,7 +379,7 @@ export async function run() {
       .option(
         '--maxSampleSize <number>',
         'The maximum number of rows to sample at anyone time.',
-        1e5
+        '100000'
       )
       .option(
         '--dry',
@@ -392,7 +397,7 @@ export async function run() {
       .option(
         '--loopInterval <number>',
         'When defined puts the program into a loop that executes every X seconds.',
-        0
+        '0'
       )
       .parse(process.argv);
 
@@ -434,6 +439,8 @@ if (require.main === module) {
         });
       });
     })
-    .catch(log.error)
+    .catch((error) => {
+      log.error('audit-tokens', { error });
+    })
     .finally(process.exit);
 }
