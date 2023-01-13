@@ -3,7 +3,8 @@
 echo "Running base install!"
 echo " . Base commit reference: $(cat base_ref)"
 echo " . Current commit reference: $(git rev-parse HEAD)"
-echo " . Force yarn install: $FORCE_YARN_INSTALL"
+echo " . yarn.lock sha1: $(sha1sum yarn.lock)"
+echo " . yarn.lock.base sha1: $(sha1sum yarn.lock.base)"
 echo -e '\n\n'
 
 # Only run yarn install if there are changes in the lock file or the env, FORCE_YARN_INSTALL,

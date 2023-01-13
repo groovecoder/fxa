@@ -1,14 +1,11 @@
 #/bin/bash -ex
 
-LIST=".lists/ts-build-includes.list"
-
-if [[ ! -f $LIST ]]; then
-  echo "List isn't a valid file: $LIST"
-  exit 1
-fi
-
+# Only rebuild packages that have changes since the container's
+# base_ref, which holds the commit from which the container was built.
+# This works, because when the container image is created, we
+# also compile the workspaces.
 yarn workspaces foreach \
     -piv \
     --topological-dev \
-    $(cat $LIST) \
+    --since=$(cat base_ref) \
     run compile;
