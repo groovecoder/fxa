@@ -3,20 +3,28 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import React from 'react';
-import { Subject } from './mocks';
+import { Subject, SubjectWith2Balloons } from './mocks';
 import AppLayout from '../AppLayout';
-import FormResetPasswordWithBalloon from '.';
+import FormPasswordWithBalloons from '.';
 import { Meta } from '@storybook/react';
 
 export default {
-  title: 'Components/FormResetPasswordWithBalloon',
-  component: FormResetPasswordWithBalloon,
+  title: 'Components/FormPasswordWithBalloons',
+  component: FormPasswordWithBalloons,
 } as Meta;
 
 export const Default = () => (
   <AppLayout>
     <div className="max-w-lg mx-auto">
       <Subject />
+    </div>
+  </AppLayout>
+);
+
+export const CustomTextWithConfirmPasswordBalloon = () => (
+  <AppLayout>
+    <div className="max-w-lg mx-auto">
+      <SubjectWith2Balloons />
     </div>
   </AppLayout>
 );

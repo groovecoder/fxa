@@ -2,14 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-.info {
-  @apply flex gap-2 items-center mb-5 p-3 rounded bg-grey-50 text-black;
-}
-
 .info-text {
-  @apply grow ltr:pl-5 rtl:pr-5 text-xs font-bold;
-
-  /* REACT NOTE: probably don't need this nesting, add class in JSX instead */
+  /** REACT NOTE:
+  *   general styles for .info and .info-banner moved to fxa-react
+  *   the nested rule below is only needed for content-server,
+  *   styled with class on JSX element in React component(s)
+  */
   a {
     @apply underline;
   }

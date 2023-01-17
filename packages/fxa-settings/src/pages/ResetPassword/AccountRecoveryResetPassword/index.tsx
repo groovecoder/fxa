@@ -14,7 +14,7 @@ import { useFtlMsgResolver } from '../../../models/hooks';
 import LinkRememberPassword from '../../../components/LinkRememberPassword';
 import LinkExpired from '../../../components/LinkExpired';
 import LinkDamaged from '../../../components/LinkDamaged';
-import FormResetPasswordWithBalloon from '../../../components/FormResetPasswordWithBalloon';
+import FormPasswordWithBalloons from '../../../components/FormPasswordWithBalloons';
 
 // This page is based on complete_reset_password but has been separated to align with the routes.
 
@@ -108,7 +108,7 @@ const AccountRecoveryResetPassword = ({
            as the username. */}
           <input type="email" value={email} className="hidden" readOnly />
           <section className="text-start mt-4">
-            <FormResetPasswordWithBalloon
+            <FormPasswordWithBalloons
               {...{
                 formState,
                 errors,

@@ -4,7 +4,7 @@
 
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import FormResetPasswordWithBalloon from '.';
+import FormPasswordWithBalloons from '.';
 
 export const Subject = () => {
   type FormData = {
@@ -30,7 +30,7 @@ export const Subject = () => {
     });
 
   return (
-    <FormResetPasswordWithBalloon
+    <FormPasswordWithBalloons
       {...{
         formState,
         errors,
@@ -44,6 +44,52 @@ export const Subject = () => {
       email="test@example.com"
       loading={false}
       onFocusMetricsEvent="test-event"
+    />
+  );
+};
+
+export const SubjectWith2Balloons = () => {
+  type FormData = {
+    oldPassword?: string;
+    newPassword: string;
+    confirmPassword: string;
+  };
+  const onFormSubmit = () => {
+    // this alert is for Storybook
+    alert('Form submitted! (onFormSubmit called)');
+  };
+
+  const [newPasswordErrorText, setNewPasswordErrorText] = useState<string>();
+
+  const { handleSubmit, register, getValues, errors, formState, trigger } =
+    useForm<FormData>({
+      mode: 'onTouched',
+      criteriaMode: 'all',
+      defaultValues: {
+        newPassword: '',
+        confirmPassword: '',
+      },
+    });
+
+  return (
+    <FormPasswordWithBalloons
+      {...{
+        formState,
+        errors,
+        trigger,
+        register,
+        getValues,
+        newPasswordErrorText,
+        setNewPasswordErrorText,
+      }}
+      onSubmit={handleSubmit(onFormSubmit)}
+      email="test@example.com"
+      loading={false}
+      onFocusMetricsEvent="test-event"
+      showConfirmPwdBalloon
+      submitButtonText="Custom action"
+      newPasswordLabel="Type your password here"
+      confirmPasswordLabel="Type it again"
     />
   );
 };

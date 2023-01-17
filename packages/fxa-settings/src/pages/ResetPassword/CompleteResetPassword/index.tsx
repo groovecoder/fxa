@@ -14,7 +14,7 @@ import WarningMessage from '../../../components/WarningMessage';
 import LinkRememberPassword from '../../../components/LinkRememberPassword';
 import LinkExpired from '../../../components/LinkExpired';
 import LinkDamaged from '../../../components/LinkDamaged';
-import FormResetPasswordWithBalloon from '../../../components/FormResetPasswordWithBalloon';
+import FormPasswordWithBalloons from '../../../components/FormPasswordWithBalloons';
 
 // The equivalent complete_reset_password mustache file included account_recovery_reset_password
 // For React, we have opted to separate these into two pages to align with the routes.
@@ -127,7 +127,7 @@ const CompleteResetPassword = ({
            as the username. */}
           <input type="email" value={email} className="hidden" readOnly />
           <section className="text-start mt-4">
-            <FormResetPasswordWithBalloon
+            <FormPasswordWithBalloons
               {...{
                 formState,
                 errors,
