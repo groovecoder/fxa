@@ -3,13 +3,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { getFtlBundle, testL10n } from 'fxa-react/lib/test-utils';
 import { FluentBundle } from '@fluent/bundle';
 import SigninReported from '.';
-import { usePageViewEvent } from '../../lib/metrics';
+import { usePageViewEvent } from '../../../lib/metrics';
 
-jest.mock('../../lib/metrics', () => ({
+jest.mock('../../../lib/metrics', () => ({
   usePageViewEvent: jest.fn(),
 }));
 
