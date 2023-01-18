@@ -3,7 +3,8 @@
 echo "Running base install!"
 echo " . Base commit reference: $(cat base_ref)"
 echo " . Current commit reference: $(git rev-parse HEAD)"
-echo " . Force yarn install: $FORCE_YARN_INSTALL"
+echo " . yarn.lock sha1: $(sha1sum yarn.lock)"
+echo " . yarn.lock.base sha1: $(sha1sum yarn.lock.base)"
 echo -e '\n\n'
 
 # Only run yarn install if there are changes in the lock file or the env, FORCE_YARN_INSTALL,
@@ -40,18 +41,10 @@ elif ! cmp --silent yarn.lock yarn.lock.base; then
     #     some insight into whether or not a build is repeatedly failing, or if an package is introducing a lot of overhead
     #     during install.
     set -x
-    PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 yarn install --immutable --inline-builds;
+    PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 yarn install --immutable --mode skip-build;
 else
     echo '=============================================================================='
     echo 'Congrats! No changes detected on yarn.lock.'
-    echo '------------------------------------------------------------------------------'
-    echo 'Skipping yarn install and running postinstall directly.\n'
     echo '=============================================================================='
     echo -e '\n\n'
-
-
-    # If we skip the yarn install, postinstall may still be needed on any workspace that have changed
-    # since the base docker image was built.
-    set -x
-    yarn workspaces foreach --since=$(cat base_ref) -R run postinstall
 fi

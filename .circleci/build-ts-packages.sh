@@ -7,6 +7,10 @@ if [[ ! -f $LIST ]]; then
   exit 1
 fi
 
+# Makes sure all post installs have been run.
+yarn rebuild;
+
+# Compile typescript on applicable packages
 yarn workspaces foreach \
     -piv \
     --topological-dev \

@@ -45,7 +45,7 @@ executors:
         default: medium
     resource_class: << parameters.resource_class >>
     docker:
-      - image: << pipeline.parameters.docker-repo >>:ci-base-latest
+      - image: << pipeline.parameters.docker-repo >>:ci-latest
     environment:
       NODE_ENV: development
       FIRESTORE_EMULATOR_HOST: localhost:9090
@@ -58,7 +58,7 @@ executors:
         default: large
     resource_class: << parameters.resource_class >>
     docker:
-      - image: << pipeline.parameters.docker-repo >>:ci-base-latest
+      - image: << pipeline.parameters.docker-repo >>:ci-latest
       - image: cimg/mysql:8.0.28
         command: --default-authentication-plugin=mysql_native_password
       - image: jdlk7/firestore-emulator
@@ -77,7 +77,7 @@ executors:
         default: large
     resource_class: << parameters.resource_class >>
     docker:
-      - image: << pipeline.parameters.docker-repo >>:ci-base-browsers-latest
+      - image: << pipeline.parameters.docker-repo >>:ci-browsers-latest
       - image: redis
       - image: memcached
       - image: pafortin/goaws
@@ -104,7 +104,7 @@ executors:
         default: medium+
     resource_class: << parameters.resource_class >>
     docker:
-      - image: << pipeline.parameters.docker-repo >>:ci-base-browsers-latest
+      - image: << pipeline.parameters.docker-repo >>:ci-browsers-latest
 
 commands:
   # Note: Cloning this way allows us to run a git fetch later on download the road. This type of
@@ -112,7 +112,7 @@ commands:
   # https://github.com/mozilla/fxa for the remote origin.
   git-clone:
     steps:
-      - run: git clone https://github.com/mozilla/fxa .
+      - run: git clone https://github.com/mozilla/fxa . --depth=1 --no-single-branch
       - run: git checkout << pipeline.git.revision >>
 
   # Note: Since we use a pre-populated base image that has a .git folder already present (see
@@ -160,18 +160,17 @@ commands:
   cache-save-yarn:
     steps:
       - save_cache:
-          key: fxa-yarn-07-{{ checksum "yarn.lock" }}
+          key: fxa-yarn-001-{{ checksum "yarn.lock" }}
           paths:
-            - /home/circleci/.yarn/berry
-            - /home/circleci/project/.yarn/build-state.yml
-            - /home/circleci/project/.yarn/install-state.gzs
+            - /home/circleci/.yarn
+            - /home/circleci/project/.yarn
 
   cache-restore-yarn:
     steps:
       - restore_cache:
           keys:
-            - fxa-yarn-07-{{ checksum "yarn.lock" }}
-            - fxa-yarn-07-
+            - fxa-yarn-001-{{ checksum "yarn.lock" }}
+            - fxa-yarn-001-
 
   test-content-server-part:
     parameters:
@@ -276,6 +275,11 @@ commands:
             - /home/circleci/project/packages/fxa-react/dist
             - /home/circleci/project/packages/fxa-shared/dist
             - /home/circleci/project/packages/fxa-support-panel/dist
+            - /home/circleci/project/packages/fxa-content-server/fxa-content-server-l10n
+            - /home/circleci/project/packages/fxa-payments-server/fxa-content-server-l10n
+            - /home/circleci/project/packages/fxa-settings/fxa-content-server-l10n
+            - /home/circleci/project/packages/fxa-auth-server/fxa-content-server-l10n
+            - /home/circleci/project/packages/fxa-react/fxa-content-server-l10n
 
   ts-build-restore:
     steps:
@@ -333,10 +337,16 @@ jobs:
   # This deploys a base image of fxa that is useful for CI testing. Think of this image as
   # the last known good state of fxa. The image is designed to come with everything required
   # to spin up tests pipelines quickly.
-  deploy-fxa-ci-image:
+  deploy-fxa-ci-images:
     parameters:
       executor:
         type: executor
+      base_tag:
+        type: string
+        default: ci-latest
+      browsers_tag:
+        type: string
+        default: ci-browsers-latest
     executor: << parameters.executor >>
     steps:
       - setup_remote_docker:
@@ -344,45 +354,49 @@ jobs:
       - git-clone
       - cache-restore-yarn
       - run:
-          name: Build docker fxa ci image
-          command: docker build . -f ./_dev/docker/ci-base/Dockerfile -t ci-base-latest
-      - deploy:
-          name: Push fxa ci image
+          name: Build docker fxa ci images
           command: |
-            docker login -u $DOCKER_USER_fxa_circleci -p $DOCKER_PASS_fxa_circleci
-            docker tag ci-base-latest << pipeline.parameters.docker-repo >>:ci-base-latest
-            docker push << pipeline.parameters.docker-repo >>:ci-base-latest
+            cd /home/circleci
+            mkdir -p .yarn
+            docker build . -f ./project/_dev/docker/ci-base/Dockerfile -t << parameters.base_tag >>
+            docker tag << parameters.base_tag >> << pipeline.parameters.docker-repo >>:<< parameters.base_tag >>
 
-  # This deploys another base image. It's built on top of the image produced above. This
-  # image has all the libraries needed for running UI tests automation in headless browsers.
-  deploy-fxa-ci-browser-image:
-    parameters:
-      executor:
-        type: executor
-    executor: << parameters.executor >>
-    steps:
-      - setup_remote_docker:
-          docker_layer_caching: true
+      # Next create the browsers image. This image is used for functional testing.
       - browser-tools/install-firefox:
           version: 102.4.0esr
       - browser-tools/install-geckodriver:
           version: v0.32.0
-      - git-clone
-      - cache-restore-yarn
-      # Copies the browsers the browsers that were installed above into a location accessible to the
-      # docker build.
-      - run: mkdir -p /home/circleci/project/install
-      - run: cp -r /usr/local/bin/firefox* /home/circleci/project/install/.
-      - run: cp -r /usr/local/bin/gecko* /home/circleci/project/install/.
+      - run:
+          # Copies the browsers the browsers that were installed above into a location accessible to the
+          # docker build.
+          name: Copy browser
+          command: |
+            mkdir -p /home/circleci/install
+            cp -r /usr/local/bin/firefox* /home/circleci/install/.
+            cp -r /usr/local/bin/gecko* /home/circleci/install/.
       - run:
           name: Build docker fxa ci image
-          command: docker build . -f ./_dev/docker/ci-browsers/Dockerfile -t ci-base-browsers-latest
+          command: |
+            cd /home/circleci
+            docker build . -f ./project/_dev/docker/ci-browsers/Dockerfile -t << parameters.browsers_tag >>
+            docker tag << parameters.browsers_tag >> << pipeline.parameters.docker-repo >>:<< parameters.browsers_tag >>
+
+      # Finally deploy images. We want this to deploy close together to avoid a scenario where ci-latest is ahead of ci-browsers-latest
       - deploy:
-          name: Push fxa ci image
+          name: Push CI Images
           command: |
             docker login -u $DOCKER_USER_fxa_circleci -p $DOCKER_PASS_fxa_circleci
-            docker tag ci-base-browsers-latest << pipeline.parameters.docker-repo >>:ci-base-browsers-latest
-            docker push << pipeline.parameters.docker-repo >>:ci-base-browsers-latest
+            docker push << pipeline.parameters.docker-repo >>:<< parameters.base_tag >> &
+            docker push << pipeline.parameters.docker-repo >>:<< parameters.browsers_tag >> &
+            wait
+
+      # Cache out of the docker image
+      - run:
+          name: Extract docker cache
+          command: .circleci/copy-docker-cache.sh << parameters.base_tag >>
+
+      # Save the yarn to circleci's cache so it can be used on subsequent builds
+      - cache-save-yarn
 
   build-and-validate:
     executor: default-executor
@@ -532,11 +546,6 @@ jobs:
           name: Build and deploy Storybooks
           command: npx github:mozilla-fxa/storybook-gcp-publisher
 
-  update-yarn-cache:
-    executor: default-executor
-    steps:
-      - cache-save-yarn
-
 workflows:
 
   # This workflow is executed whenever a pull request is issued. It will also
@@ -652,7 +661,7 @@ workflows:
           requires:
             - request-test-content-server-remote-parts
 
-  # This workflow is primarily triggered after PRs are approved and land on main.
+  # This workflow is triggered after PRs are approved and land on main.
   deploy_branch:
     jobs:
       - deploy-packages:
@@ -665,29 +674,20 @@ workflows:
                 - /^dockerpush.*/
             tags:
               ignore: /.*/
-      - deploy-fxa-ci-image:
-          executor: docker-build-executor
+      - deploy-fxa-ci-images:
+          executor:
+            name: docker-build-executor
+            image: cimg/node:16.13-browsers
           filters:
             branches:
               only:
                 - main
+                - FXA-6460-v2
             tags:
               ignore: /.*/
-      - deploy-fxa-ci-browser-image:
-          requires:
-            - deploy-fxa-ci-image
-          executor:
-            name: docker-build-executor
-            image: cimg/node:16.13-browsers
       - build-and-deploy-storybooks:
           requires:
-            - deploy-fxa-ci-image
-
-      # Once the base image is deployed, go ahead and cache the yarn's state. This will save
-      # us some time on the next build
-      - update-yarn-cache:
-          requires:
-            - deploy-fxa-ci-image
+            - deploy-fxa-ci-images
 
   # This workflow is used for building docker containers that are then deployed to
   # live infrastructure.
