@@ -21,7 +21,7 @@ export const PageSecurityEvents = (_: RouteComponentProps) => {
     account.getSecurityEvents().then((events) => {
       setSecurityEvents(events);
     });
-  }, []);
+  });
 
   return (
     <FlowContainer
