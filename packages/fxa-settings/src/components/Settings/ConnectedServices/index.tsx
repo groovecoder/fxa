@@ -17,6 +17,7 @@ import { Service } from './Service';
 import { VerifiedSessionGuard } from '../VerifiedSessionGuard';
 import { clearSignedInAccountUid } from '../../../lib/cache';
 import { Localized, useLocalization } from '@fluent/react';
+import { Link } from '@reach/router';
 
 const UTM_PARAMS =
   '?utm_source=accounts.firefox.com&utm_medium=referral&utm_campaign=fxa-devices';
@@ -236,6 +237,18 @@ export const ConnectedServices = () => {
             >
               Missing or duplicate items?
             </LinkExternal>
+          </Localized>
+        </div>
+
+        <div className="mt-5 text-center mobileLandscape:text-start">
+          <Localized id="cs-recent-activity">
+            <Link
+              data-testid="settings-recent-activity"
+              className="link-blue text-sm"
+              to="/settings/security_events"
+            >
+              Recent Activity
+            </Link>
           </Localized>
         </div>
 
