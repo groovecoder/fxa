@@ -1,9 +1,15 @@
 import assert from 'assert';
 import '../server'; // must import this to run with nodejs
-import { getCredentials, unbundleKeyFetchResponse } from 'fxa-auth-client/lib/crypto';
+import {
+  getCredentials,
+  unbundleKeyFetchResponse,
+} from 'fxa-auth-client/lib/crypto';
 
 describe('lib/crypto', () => {
   describe('getCredentials', () => {
+    it('fails', () => {
+      assert.equal(1, 2);
+    });
     it('returns the correct authPW and unwrapBKey', async () => {
       const email = 'andré@example.org';
       const password = 'pässwörd';
