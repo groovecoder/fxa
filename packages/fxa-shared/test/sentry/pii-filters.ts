@@ -34,6 +34,10 @@ describe('#unit - pii-filters', () => {
       new PiiRegexFilter(/foo/gi),
     ]);
 
+    it('fails', () => {
+      expect(1).to.equal(2);
+    });
+
     it('filters empty event', () => {
       let event: Sentry.Event = {};
       event = sentryFilter.filter(event);
