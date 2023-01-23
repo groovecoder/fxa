@@ -9,7 +9,7 @@ import { render, screen } from '@testing-library/react';
 // import { FluentBundle } from '@fluent/bundle';
 import { usePageViewEvent } from '../../../lib/metrics';
 import SigninRecoveryCode from '.';
-import { MOCK_SERVICE } from './mocks';
+import { MOCK_EMAIL, MOCK_SERVICE } from './mocks';
 
 jest.mock('../../../lib/metrics', () => ({
   usePageViewEvent: jest.fn(),
@@ -25,7 +25,7 @@ describe('PageSigninRecoveryCode', () => {
   // });
 
   it('renders as expected', () => {
-    render(<SigninRecoveryCode />);
+    render(<SigninRecoveryCode email={MOCK_EMAIL} />);
     // testAllL10n(screen, bundle);
 
     const headingEl = screen.getByRole('heading', { level: 1 });
@@ -50,7 +50,9 @@ describe('PageSigninRecoveryCode', () => {
   });
 
   it('shows the relying party in the header when a service name is provided', () => {
-    render(<SigninRecoveryCode serviceName={MOCK_SERVICE} />);
+    render(
+      <SigninRecoveryCode email={MOCK_EMAIL} serviceName={MOCK_SERVICE} />
+    );
     const headingEl = screen.getByRole('heading', { level: 1 });
     expect(headingEl).toHaveTextContent(
       'Enter backup authentication code to continue to Example Service'
@@ -58,7 +60,7 @@ describe('PageSigninRecoveryCode', () => {
   });
 
   it('emits a metrics event on render', () => {
-    render(<SigninRecoveryCode />);
+    render(<SigninRecoveryCode email={MOCK_EMAIL} />);
     expect(usePageViewEvent).toHaveBeenCalledWith(`signin-recovery-code`, {
       entrypoint_variation: 'react',
     });

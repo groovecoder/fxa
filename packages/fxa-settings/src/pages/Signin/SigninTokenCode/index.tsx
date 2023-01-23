@@ -3,53 +3,41 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
 import { RouteComponentProps } from '@reach/router';
-import InputText from '../../components/InputText';
 import { FtlMsg } from 'fxa-react/lib/utils';
-import { useFtlMsgResolver } from '../../models/hooks';
-import { usePageViewEvent, logViewEvent } from '../../lib/metrics';
+import { useFtlMsgResolver } from '../../../models/hooks';
+import { usePageViewEvent } from '../../../lib/metrics';
 // import { useAlertBar } from '../../models';
 import { ReactComponent as MailImg } from './graphic_mail.svg';
+import FormVerifyCode, {
+  FormAttributes,
+} from '../../../components/FormVerifyCode';
 
 // email will eventually be obtained from account context
 export type SigninTokenCodeProps = { email: string };
 
-type FormData = {
-  confirmationCode: string;
-};
-
 const SigninTokenCode = ({
   email,
 }: SigninTokenCodeProps & RouteComponentProps) => {
-  usePageViewEvent('signin-token-code', {
+  const viewName = 'signin-token-code';
+  usePageViewEvent(viewName, {
     entrypoint_variation: 'react',
   });
 
-  const [confirmationCode, setConfirmationCode] = useState<string>('');
-  const [tokenErrorMessage, setTokenErrorMessage] = useState<string>('');
-  const [isFocused, setIsFocused] = useState(false);
+  const [code, setCode] = useState<string>('');
+  const [codeErrorMessage, setCodeErrorMessage] = useState<string>('');
+
   // const alertBar = useAlertBar();
   const ftlMsgResolver = useFtlMsgResolver();
 
-  const onFocusMetricsEvent = 'signin-token-code.engage';
-
-  const onFocus = () => {
-    if (!isFocused && onFocusMetricsEvent) {
-      logViewEvent('flow', onFocusMetricsEvent, {
-        entrypoint_variation: 'react',
-      });
-      setIsFocused(true);
-    }
+  const formAttributes: FormAttributes = {
+    inputFtlId: 'signin-token-code-input-label-v2',
+    inputLabelText: 'Enter 6-digit code',
+    pattern: '[0-9]{6}',
+    maxLength: 6,
+    submitButtonFtlId: 'signin-token-code-confirm-button',
+    submitButtonText: 'Confirm',
   };
-
-  const { handleSubmit } = useForm<FormData>({
-    mode: 'onBlur',
-    criteriaMode: 'all',
-    defaultValues: {
-      confirmationCode: '',
-    },
-  });
 
   const handleResendCode = () => {
     // TODO: add resend code action
@@ -59,12 +47,12 @@ const SigninTokenCode = ({
   };
 
   const onSubmit = () => {
-    if (!confirmationCode) {
+    if (!code) {
       const codeRequiredError = ftlMsgResolver.getMsg(
         'signin-token-code-required-error',
         'Confirmation code required'
       );
-      setTokenErrorMessage(codeRequiredError);
+      setCodeErrorMessage(codeRequiredError);
     }
     try {
       // Check confirmation code
@@ -108,49 +96,19 @@ const SigninTokenCode = ({
           </p>
         </FtlMsg>
 
-        <form
-          noValidate
-          className="flex flex-col gap-4"
-          onSubmit={handleSubmit(onSubmit)}
-        >
-          {/* Using `type="text" inputmode="numeric"` shows the numeric pad on mobile and strips out whitespace on desktop. */}
-          <FtlMsg id="signin-token-code-input-label">
-            <InputText
-              type="text"
-              inputMode="numeric"
-              label="Enter 6-digit code"
-              onChange={(e) => {
-                setConfirmationCode(e.target.value);
-                // clear error tooltip if user types in the field
-                if (tokenErrorMessage) {
-                  setTokenErrorMessage('');
-                }
-              }}
-              onFocusCb={onFocusMetricsEvent ? onFocus : undefined}
-              errorText={tokenErrorMessage}
-              autoFocus
-              // TODO: validate pattern
-              pattern="\d[ ]*"
-              className="text-start"
-              anchorStart
-              autoComplete="off"
-              spellCheck={false}
-              prefixDataTestId="signin-token-code"
-              required
-              tooltipPosition="bottom"
-            />
-          </FtlMsg>
+        <FormVerifyCode
+          {...{
+            formAttributes,
+            viewName,
+            email,
+            onSubmit,
+            code,
+            setCode,
+            codeErrorMessage,
+            setCodeErrorMessage,
+          }}
+        />
 
-          <FtlMsg id="signin-token-code-confirm-button">
-            <button
-              type="submit"
-              id="use-logged-in"
-              className="cta-primary cta-xl"
-            >
-              Confirm
-            </button>
-          </FtlMsg>
-        </form>
         <div className="animate-delayed-fade-in opacity-0 mt-5 text-grey-500 text-xs inline-flex gap-1">
           <FtlMsg id="signin-token-code-code-expired">
             <p>Code expired?</p>

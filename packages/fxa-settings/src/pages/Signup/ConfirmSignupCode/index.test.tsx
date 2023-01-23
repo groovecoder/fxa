@@ -7,11 +7,11 @@ import '@testing-library/jest-dom/extend-expect';
 import { render, screen } from '@testing-library/react';
 // import { getFtlBundle, testAllL10n } from 'fxa-react/lib/test-utils';
 // import { FluentBundle } from '@fluent/bundle';
-import { usePageViewEvent } from '../../lib/metrics';
-import SigninTokenCode from '.';
+import { usePageViewEvent } from '../../../lib/metrics';
+import ConfirmSignupCode from '.';
 import { MOCK_EMAIL } from './mocks';
 
-jest.mock('../../lib/metrics', () => ({
+jest.mock('../../../lib/metrics', () => ({
   usePageViewEvent: jest.fn(),
   logViewEvent: jest.fn(),
 }));
@@ -25,7 +25,7 @@ describe('PageSigninTokenCode', () => {
   // });
 
   it('renders as expected', () => {
-    render(<SigninTokenCode email={MOCK_EMAIL} />);
+    render(<ConfirmSignupCode email={MOCK_EMAIL} />);
     // testAllL10n(screen, bundle);
 
     const headingEl = screen.getByRole('heading', { level: 1 });
@@ -39,8 +39,8 @@ describe('PageSigninTokenCode', () => {
   });
 
   it('emits a metrics event on render', () => {
-    render(<SigninTokenCode email={MOCK_EMAIL} />);
-    expect(usePageViewEvent).toHaveBeenCalledWith(`signin-token-code`, {
+    render(<ConfirmSignupCode email={MOCK_EMAIL} />);
+    expect(usePageViewEvent).toHaveBeenCalledWith(`confirm-signup-code`, {
       entrypoint_variation: 'react',
     });
   });

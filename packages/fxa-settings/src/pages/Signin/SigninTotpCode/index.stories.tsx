@@ -6,7 +6,7 @@ import React from 'react';
 import SigninTotpCode, { SigninTotpCodeProps } from '.';
 import AppLayout from '../../../components/AppLayout';
 import { Meta } from '@storybook/react';
-import { MOCK_SERVICE } from './mocks';
+import { MOCK_EMAIL, MOCK_SERVICE } from './mocks';
 import { LocationProvider } from '@reach/router';
 
 export default {
@@ -14,7 +14,7 @@ export default {
   component: SigninTotpCode,
 } as Meta;
 
-const storyWithProps = (props?: SigninTotpCodeProps) => {
+const storyWithProps = (props: SigninTotpCodeProps) => {
   const story = () => (
     <LocationProvider>
       <AppLayout>
@@ -25,6 +25,9 @@ const storyWithProps = (props?: SigninTotpCodeProps) => {
   return story;
 };
 
-export const Default = storyWithProps();
+export const Default = storyWithProps({ email: MOCK_EMAIL });
 
-export const WithRelyingParty = storyWithProps({ serviceName: MOCK_SERVICE });
+export const WithRelyingParty = storyWithProps({
+  email: MOCK_EMAIL,
+  serviceName: MOCK_SERVICE,
+});

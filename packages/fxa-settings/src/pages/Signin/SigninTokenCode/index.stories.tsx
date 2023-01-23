@@ -3,24 +3,18 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import React from 'react';
-import SigninRecoveryCode from '.';
+import SigninTokenCode from '.';
 import AppLayout from '../../../components/AppLayout';
 import { Meta } from '@storybook/react';
-import { MOCK_EMAIL, MOCK_SERVICE } from './mocks';
+import { MOCK_EMAIL } from './mocks';
 
 export default {
-  title: 'pages/Signin/SigninRecoveryCode',
-  component: SigninRecoveryCode,
+  title: 'pages/Signin/SigninTokenCode',
+  component: SigninTokenCode,
 } as Meta;
 
 export const Default = () => (
   <AppLayout>
-    <SigninRecoveryCode email={MOCK_EMAIL} />
-  </AppLayout>
-);
-
-export const WithServiceName = () => (
-  <AppLayout>
-    <SigninRecoveryCode email={MOCK_EMAIL} serviceName={MOCK_SERVICE} />
+    <SigninTokenCode email={MOCK_EMAIL} />
   </AppLayout>
 );
