@@ -53,5 +53,5 @@ else
     # If we skip the yarn install, postinstall may still be needed on any workspace that have changed
     # since the base docker image was built.
     set -x
-    yarn workspaces foreach --since=$(cat base_ref) -R run postinstall
+    yarn workspaces foreach -piv --since=$(cat base_ref) -R run postinstall
 fi
