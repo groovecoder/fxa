@@ -301,7 +301,6 @@ commands:
       - run:
           name: << parameters.test_name >>
           command: ./.circleci/run-list-parallel.sh  << parameters.list >> << parameters.max_jobs >> << parameters.index >>:<< parameters.total >>
-      - fail-fast
       - store-artifacts
 
   fail-fast:
@@ -436,6 +435,7 @@ jobs:
           max_jobs: "1"
           index: << parameters.index >>
           total: << parameters.total >>
+      - fail-fast
 
   test-content-server-part:
     parameters:
