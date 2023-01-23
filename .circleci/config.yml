@@ -227,7 +227,6 @@ commands:
       - run:
           name: Linting
           command: ./.circleci/lint-packages.sh
-      - fail-fast
 
   # Not currently used. But should be soon once coverage reports are fixed up.
   report-coverage:
@@ -305,6 +304,7 @@ commands:
 
   fail-fast:
     steps:
+      - run: sleep 10
       - run:
           name: Fail Fast
           when: on_fail
@@ -403,7 +403,6 @@ jobs:
       - provision
       - ts-build-restore
       - lint
-      - fail-fast
 
   unit-test:
     executor: default-executor
@@ -415,7 +414,6 @@ jobs:
       - run-tests:
           test_name: Unit Test (many)
           list: unit-test.list
-      - fail-fast
 
   integration-test-part:
     parameters:
@@ -435,7 +433,6 @@ jobs:
           max_jobs: "1"
           index: << parameters.index >>
           total: << parameters.total >>
-      - fail-fast
 
   test-content-server-part:
     parameters:
@@ -563,6 +560,8 @@ workflows:
           name: Unit Test
           requires:
             - Build
+          post-steps:
+            - fail-fast
 
       - integration-test-part:
           name: Integration Test Part 1
@@ -570,6 +569,8 @@ workflows:
           total: 2
           requires:
             - Build
+          post-steps:
+            - fail-fast
 
       - integration-test-part:
           name: Integration Test Part 2
@@ -577,6 +578,8 @@ workflows:
           total: 2
           requires:
             - Build
+          post-steps:
+            - fail-fast
 
       - build-and-deploy-storybooks:
           name: Story Book Build & Deploy
