@@ -6,8 +6,8 @@ function getReactFeatureFlagUrl(target: BaseTarget, path: string) {
 }
 
 test.describe('react-conversion', () => {
-  test(' Cannot create account', async ({ page, target }) => {
+  test('Cannot create account', async ({ page, target }) => {
     await page.goto(getReactFeatureFlagUrl(target, '/cannot_create_account'));
-    expect(page.isVisible('root')).toBeTruthy();
+    expect(await page.locator('#root').isVisible()).toBeTruthy();
   });
 });
