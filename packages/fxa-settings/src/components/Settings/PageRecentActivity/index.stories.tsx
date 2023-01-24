@@ -3,15 +3,15 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import React from 'react';
-import { PageSecurityEvents } from '.';
+import { PageRecentActivity } from '.';
 import { MOCK_SECURITY_EVENTS } from './mocks';
 import { Meta } from '@storybook/react';
 import { AppContext } from '../../../models';
 import { mockAppContext } from '../../../models/mocks';
 
 export default {
-  title: 'pages/Settings/SecurityEvents',
-  component: PageSecurityEvents,
+  title: 'pages/Settings/RecentActivity',
+  component: PageRecentActivity,
 } as Meta;
 
 export const Default = () => (
@@ -22,7 +22,7 @@ export const Default = () => (
       } as any,
     })}
   >
-    <PageSecurityEvents />
+    <PageRecentActivity />
   </AppContext.Provider>
 );
 
@@ -32,6 +32,6 @@ export const NoEvents = () => (
       account: { getSecurityEvents: () => Promise.resolve([]) } as any,
     })}
   >
-    <PageSecurityEvents />
+    <PageRecentActivity />
   </AppContext.Provider>
 );

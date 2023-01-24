@@ -7,10 +7,9 @@ import '@testing-library/jest-dom/extend-expect';
 import { act, screen } from '@testing-library/react';
 import { renderWithRouter, mockAppContext } from '../../../models/mocks';
 import React from 'react';
-import PageSecurityEvents from '.';
+import PageRecentActivity from '.';
 import { Account, AppContext } from '../../../models';
 import { MOCK_SECURITY_EVENTS } from './mocks';
-import { logViewEvent, settingsViewName } from '../../../lib/metrics';
 
 const account = {
   primaryEmail: {
@@ -22,11 +21,11 @@ const account = {
 const render = (acct: Account = account) =>
   renderWithRouter(
     <AppContext.Provider value={mockAppContext({ account: acct })}>
-      <PageSecurityEvents />
+      <PageRecentActivity />
     </AppContext.Provider>
   );
 
-describe.only('Security Events', () => {
+describe.only('Recent Account Activity', () => {
   it('renders', async () => {
     await act(async () => {
       await render();
@@ -37,22 +36,19 @@ describe.only('Security Events', () => {
     expect(account.getSecurityEvents).toBeCalled();
 
     expect(
-      screen.getByTestId('security-events-account-create')
+      screen.getByRole('heading', {
+        name: 'Recent Account Activity',
+      })
+    ).toBeInTheDocument();
+    expect(screen.getByText('Account was created')).toBeInTheDocument();
+    expect(screen.getByText('Account was disabled')).toBeInTheDocument();
+    expect(screen.getByText('Account was enabled')).toBeInTheDocument();
+    expect(screen.getByText('Account initiated login')).toBeInTheDocument();
+    expect(
+      screen.getByText('Account initiated password reset')
     ).toBeInTheDocument();
     expect(
-      screen.getByTestId('security-events-account-disable')
-    ).toBeInTheDocument();
-    expect(
-      screen.getByTestId('security-events-account-enable')
-    ).toBeInTheDocument();
-    expect(
-      screen.getByTestId('security-events-account-login')
-    ).toBeInTheDocument();
-    expect(
-      screen.getByTestId('security-events-account-reset')
-    ).toBeInTheDocument();
-    expect(
-      screen.getByTestId('security-events-emails-clearBounces')
+      screen.getByText('Account cleared email bounces')
     ).toBeInTheDocument();
   });
 });

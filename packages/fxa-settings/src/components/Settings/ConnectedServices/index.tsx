@@ -240,18 +240,6 @@ export const ConnectedServices = () => {
           </Localized>
         </div>
 
-        <div className="mt-5 text-center mobileLandscape:text-start">
-          <Localized id="cs-recent-activity">
-            <Link
-              data-testid="settings-recent-activity"
-              className="link-blue text-sm"
-              to="/settings/security_events"
-            >
-              Recent Activity
-            </Link>
-          </Localized>
-        </div>
-
         {showMobilePromo && (
           <>
             <hr className="unit-row-hr mt-5 mx-0" />
