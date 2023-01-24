@@ -4,6 +4,9 @@ parameters:
   docker-repo:
     type: string
     default: mozilla/fxa-circleci
+  force-deploy-fxa-ci-images:
+    type: boolean
+    default: false
 
 orbs:
   browser-tools: circleci/browser-tools@1.2.3
@@ -117,7 +120,7 @@ commands:
           name: git clone
           command: |
             git clone https://github.com/mozilla/fxa . --depth=1
-            git fetch https://github.com/mozilla/fxa << pipeline.git.revision >> --depth=1
+            git fetch https://github.com/mozilla/fxa << pipeline.git.revision >> --depth=2
             git checkout << pipeline.git.revision >>
 
   # Note: Since we use a pre-populated base image that has a .git folder already present (see
@@ -342,52 +345,64 @@ jobs:
         default: ci-browsers-latest
     executor: << parameters.executor >>
     steps:
+
+      # Run with layer caching to speed up builds
       - setup_remote_docker:
           docker_layer_caching: true
+
+      # Grab the repo
       - git-clone
-      - cache-restore-yarn
+
+      # If there are no changes on the lock file, we can skip the rebuild, and exit early.
       - run:
-          name: Prepare for build
+          name: Check if rebuild is needed
+          command: |
+            # If the lockfile has changed, we need a rebuild
+            if [[ "<< pipeline.parameters.force-deploy-fxa-ci-images >>" == "true" ]]; then
+              echo "Pipeline parameter force-deploy-fxa-ci-images set to true. Rebuilding docker images for CI.";
+            elif [[ -n $(git diff HEAD~1 HEAD -- yarn.lock) ]]; then
+              echo "Yarn lock has changes. Rebuilding docker images for CI!";
+            else
+              echo "No changes on yarn.lock. Skipping CI image rebuild.";
+              circleci-agent step halt
+            fi
+
+      # We restore the yarn cache to speed up build times
+      - cache-restore-yarn
+
+      # Build the default CI Image
+      - run:
+          name: Build Base CI Image
           command: |
             cd /home/circleci
             mkdir -p .yarn
-
-      # Next build the docker images. Note that the base image is constructed first, and following
-      # Images are run in parallel. Also note that state of the yarn cache is extracted in this step
-      - run:
-          name: Build CI Images
-          command: |
-            cd /home/circleci
             docker build . \
               -f ./project/_dev/docker/ci/Dockerfile \
               --target base \
               -t << pipeline.parameters.docker-repo >>:<< parameters.base_tag >>
 
-      # Next create the browsers image, and move the somewhere accessible to the docker build.
-      # This image is used for functional testing.
+      # Build the browser based CI image. This image is used for functional testing.
+      # TODO: Remove these browser installs when we phase out content server tests.
       - browser-tools/install-firefox:
           version: 102.4.0esr
       - browser-tools/install-geckodriver:
           version: v0.32.0
       - run:
-          name: Copy browser
-          command: |
-            mkdir -p /home/circleci/install
-            cp -r /usr/local/bin/firefox* /home/circleci/install/.
-            cp -r /usr/local/bin/gecko* /home/circleci/install/.
-
-      # Next build the docker images. Note that the base image is constructed first, and following
-      # Images are run in parallel. Also note that state of the yarn cache is extracted in this step
-      - run:
-          name: Build CI Images
+          name: Build Browser CI Image
           command: |
             cd /home/circleci
+            mkdir -p install
+            cp -r /usr/local/bin/firefox* /home/circleci/install/.
+            cp -r /usr/local/bin/gecko* /home/circleci/install/.
             docker build . -f ./project/_dev/docker/ci/Dockerfile \
-                           --target browsers_base \
+                           --target browsers \
                            -t << pipeline.parameters.docker-repo >>:<< parameters.browsers_tag >>
 
+      # Push images at the same time. Since these images are related, push them
+      # in unison. Doing these operations in parallel cuts down on how expensive this
+      # step is.
       - run:
-          name: Push CI Images
+          name: Push CI Images and Extract Yarn Cache
           command: |
             docker login -u $DOCKER_USER_fxa_circleci -p $DOCKER_PASS_fxa_circleci
             docker push << pipeline.parameters.docker-repo >>:<< parameters.base_tag >> &
@@ -395,7 +410,7 @@ jobs:
             .circleci/copy-docker-cache.sh << pipeline.parameters.docker-repo >>:<< parameters.base_tag >> &
             wait
 
-      # Save the yarn to circleci's cache so it can be used on subsequent builds
+      # Save the yarn cache to circleci's cache so it can be used on subsequent builds
       - cache-save-yarn
 
   build-and-validate:
