@@ -22,7 +22,8 @@ export type ViewNameType =
   | 'signin-verified'
   | 'reset-password-confirmed'
   | 'reset-password-verified'
-  | 'reset-password-with-recovery-key-verified';
+  | 'reset-password-with-recovery-key-verified'
+  | 'primary-email-verified';
 
 const getTemplateValues = (viewName: ViewNameType) => {
   let templateValues = {
@@ -40,6 +41,10 @@ const getTemplateValues = (viewName: ViewNameType) => {
       templateValues.headerId = 'reset-password-complete-header';
       templateValues.headerText = 'Your password has been reset';
       break;
+    case 'primary-email-verified':
+      templateValues.headerId = 'primary-email-verified-header';
+      templateValues.headerText = 'Primary email confirmed';
+      break;
     default:
       throw new Error('Invalid view name submitted to Ready component');
   }
@@ -49,7 +54,7 @@ const getTemplateValues = (viewName: ViewNameType) => {
 const Ready = ({
   continueHandler,
   isSignedIn = true,
-  serviceName = 'Account Settings',
+  serviceName,
   viewName,
 }: ReadyProps & RouteComponentProps) => {
   usePageViewEvent(viewName, {
@@ -81,9 +86,15 @@ const Ready = ({
       <section>
         <div className="error"></div>
         {isSignedIn ? (
-          <FtlMsg id="ready-use-service" vars={{ serviceName }}>
-            <p className="my-4 text-sm">{`You’re now ready to use ${serviceName}`}</p>
-          </FtlMsg>
+          serviceName ? (
+            <FtlMsg id="ready-use-service" vars={{ serviceName }}>
+              <p className="my-4 text-sm">{`You’re now ready to use ${serviceName}`}</p>
+            </FtlMsg>
+          ) : (
+            <FtlMsg id="ready-use-service-default">
+              <p className="my-4 text-sm">{`You’re now ready to use account settings`}</p>
+            </FtlMsg>
+          )
         ) : (
           <FtlMsg id="ready-account-ready">
             <p className="my-4 text-sm">Your account is ready!</p>

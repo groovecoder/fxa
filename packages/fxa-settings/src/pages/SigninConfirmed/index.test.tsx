@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { getFtlBundle, testL10n } from 'fxa-react/lib/test-utils';
+import { getFtlBundle, testAllL10n } from 'fxa-react/lib/test-utils';
 import { FluentBundle } from '@fluent/bundle';
 import SigninConfirmed from '.';
 import { logViewEvent, usePageViewEvent } from '../../lib/metrics';
@@ -21,14 +21,11 @@ describe('SigninConfirmed', () => {
   });
   it('renders Ready component as expected', () => {
     render(<SigninConfirmed />);
-    const ftlMsgMock = screen.getAllByTestId('ftlmsg-mock')[1];
-    testL10n(ftlMsgMock, bundle, {
-      serviceName: 'Account Settings',
-    });
+    testAllL10n(screen, bundle);
 
     const signinConfirmation = screen.getByText('Sign-in confirmed');
     const serviceAvailabilityConfirmation = screen.getByText(
-      'You’re now ready to use Account Settings'
+      'You’re now ready to use account settings'
     );
     const signinContinueButton = screen.queryByText('Continue');
     // Calling `getByText` will fail if these elements aren't in the document,

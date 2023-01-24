@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { getFtlBundle, testL10n } from 'fxa-react/lib/test-utils';
+import { getFtlBundle, testAllL10n } from 'fxa-react/lib/test-utils';
 import { FluentBundle } from '@fluent/bundle';
 import Ready from '.';
 import { logViewEvent, usePageViewEvent } from '../../lib/metrics';
@@ -24,16 +24,13 @@ describe('Ready', () => {
 
   it('renders as expected with default values', () => {
     render(<Ready {...{ viewName }} />);
-    const ftlMsgMock = screen.getAllByTestId('ftlmsg-mock')[1];
-    testL10n(ftlMsgMock, bundle, {
-      serviceName: 'Account Settings',
-    });
+    testAllL10n(screen, bundle);
 
     const passwordResetConfirmation = screen.getByText(
       'Your password has been reset'
     );
     const serviceAvailabilityConfirmation = screen.getByText(
-      'You’re now ready to use Account Settings'
+      'You’re now ready to use account settings'
     );
     const passwordResetContinueButton = screen.queryByText('Continue');
     // Calling `getByText` will fail if the first two elements aren't in the document,
