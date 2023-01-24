@@ -17,7 +17,6 @@ import { Service } from './Service';
 import { VerifiedSessionGuard } from '../VerifiedSessionGuard';
 import { clearSignedInAccountUid } from '../../../lib/cache';
 import { Localized, useLocalization } from '@fluent/react';
-import { Link } from '@reach/router';
 
 const UTM_PARAMS =
   '?utm_source=accounts.firefox.com&utm_medium=referral&utm_campaign=fxa-devices';
