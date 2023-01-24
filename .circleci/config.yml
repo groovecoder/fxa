@@ -383,14 +383,14 @@ jobs:
           command: |
             cd /home/circleci
             docker build . -f ./project/_dev/docker/ci/Dockerfile \
-                           --target browsers \
+                           --target browsers_base \
                            -t << pipeline.parameters.docker-repo >>:<< parameters.browsers_tag >>
 
       - run:
           name: Push CI Images
           command: |
             docker login -u $DOCKER_USER_fxa_circleci -p $DOCKER_PASS_fxa_circleci
-            docker push << pipeline.parameters.docker-repo >>:<< parameters.base_tag >>
+            docker push << pipeline.parameters.docker-repo >>:<< parameters.base_tag >> &
             docker push << pipeline.parameters.docker-repo >>:<< parameters.browsers_tag >> &
             .circleci/copy-docker-cache.sh << pipeline.parameters.docker-repo >>:<< parameters.base_tag >> &
             wait
