@@ -666,8 +666,12 @@ workflows:
   # This workflow is triggered after PRs are approved and land on main.
   deploy_branch:
     jobs:
-      - deploy-packages:
-          executor: docker-build-executor
+
+      # This step builds the mono repo for a stage/production push.
+      # We don't need to do this on every build, so we will make this optional.
+      # This can be useful for creating a docker build for testing.
+      - approve-deploy-packages:
+          type: approval
           filters:
             branches:
               only:
@@ -676,6 +680,13 @@ workflows:
                 - /^dockerpush.*/
             tags:
               ignore: /.*/
+      - deploy-packages:
+          executor: docker-build-executor
+          requires:
+            - approve-deploy-packages
+
+      # This step refreshes the CI we use for running tests. It will
+      # be short circuited if the yarn.lock file has no changes.
       - deploy-fxa-ci-images:
           executor:
             name: docker-build-executor
