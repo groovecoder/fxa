@@ -21,9 +21,13 @@
 # This is used to refer to a user's account, e.g. "update your Firefox account ..."
 -product-firefox-account = Firefox account
 product-mozilla-vpn = Mozilla VPN
+product-mozilla-mdn = Mozilla MDN
+product-mozilla-hubs = Mozilla Hubs
 product-pocket = Pocket
 product-firefox-monitor = Firefox Monitor
 product-firefox-relay = Firefox Relay
+product-firefox-sync = Firefox Sync
+product-firefox-addons = Firefox Add-ons
 
 ##
 

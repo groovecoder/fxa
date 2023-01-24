@@ -9,7 +9,17 @@ import { useAccount, useAlertBar } from '../../../models';
 import InputPassword from '../../InputPassword';
 import FlowContainer from '../FlowContainer';
 import VerifiedSessionGuard from '../VerifiedSessionGuard';
-import { HomePath, MonitorLink, ROOTPATH, VPNLink } from '../../../constants';
+import {
+  AddonsLink,
+  HomePath,
+  HubsLink,
+  MDNLink,
+  MonitorLink,
+  RelayLink,
+  ROOTPATH,
+  SyncLink,
+  VPNLink,
+} from '../../../constants';
 import { logViewEvent, usePageViewEvent } from '../../../lib/metrics';
 import { Checkbox } from '../Checkbox';
 import { useLocalization } from '@fluent/react';
@@ -33,6 +43,44 @@ const checkboxLabels: Record<string, string> = {
   'delete-account-chk-box-4':
     'Any extensions and themes that you published to addons.mozilla.org will be deleted',
 };
+
+const deleteProducts = [
+  {
+    localizationId: 'product-firefox-sync',
+    productName: 'Firefox Sync',
+    href: SyncLink,
+  },
+  {
+    localizationId: 'product-mozilla-vpn',
+    productName: 'Mozilla VPN',
+    href: VPNLink,
+  },
+  {
+    localizationId: 'product-firefox-relay',
+    productName: 'Firefox Relay',
+    href: RelayLink,
+  },
+  {
+    localizationId: 'product-firefox-addons',
+    productName: 'Firefox Add-ons',
+    href: AddonsLink,
+  },
+  {
+    localizationId: 'product-firefox-monitor',
+    productName: 'Firefox Monitor',
+    href: MonitorLink,
+  },
+  {
+    localizationId: 'product-mozilla-mdn',
+    productName: 'Mozilla MDN',
+    href: MDNLink,
+  },
+  {
+    localizationId: 'product-mozilla-hubs',
+    productName: 'Mozilla Hubs',
+    href: HubsLink,
+  },
+];
 
 export const PageDeleteAccount = (_: RouteComponentProps) => {
   usePageViewEvent('settings.delete-account');
@@ -121,26 +169,27 @@ export const PageDeleteAccount = (_: RouteComponentProps) => {
         <VerifiedSessionGuard onDismiss={goHome} onError={goHome} />
         {!confirmed && (
           <div className="my-4 text-sm" data-testid="delete-account-confirm">
-            <Localized id="delete-account-confirm-title-2">
+            <Localized id="delete-account-confirm-title-3">
               <p className="mb-4">
-                You've connected your Firefox account to Mozilla products that
-                keep you secure and productive on the web:
+                You may have connected your Firefox account to one or more of
+                the following Mozilla products or services that keep you secure
+                and productive on the web:
               </p>
             </Localized>
             <div className="p-2">
-              <ul className="list-inside mb-4">
-                <li className="list-disc">
-                  <a className="link-blue" href={VPNLink}>
-                    <Localized id="product-mozilla-vpn">Mozilla VPN</Localized>
-                  </a>
-                </li>
-                <li className="list-disc">
-                  <a className="link-blue" href={MonitorLink}>
-                    <Localized id="product-firefox-monitor">
-                      Firefox Monitor
-                    </Localized>
-                  </a>
-                </li>
+              <ul
+                className="list-inside mb-4"
+                data-testid="delete-account-product-list"
+              >
+                {deleteProducts.map((product) => (
+                  <li className="list-disc" key={product.localizationId}>
+                    <a className="link-blue" href={product.href}>
+                      <Localized id={product.localizationId}>
+                        {product.productName}
+                      </Localized>
+                    </a>
+                  </li>
+                ))}
               </ul>
             </div>
             <Localized id="delete-account-acknowledge">
