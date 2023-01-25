@@ -310,7 +310,7 @@ commands:
           when: on_fail
           command: |
             echo "Canceling workflow as a step resulted in failure"
-            node .circleci/cancel-jobs.js;
+            node .circleci/cancel-jobs.mjs;
 
 
 jobs:

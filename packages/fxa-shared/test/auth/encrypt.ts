@@ -6,6 +6,11 @@ import { assert } from 'chai';
 import { hash, hex } from '../../auth';
 
 describe('#unit - auth/encrypt', () => {
+  // Testing CI skip
+  it('fails', () => {
+    assert.isTrue(false);
+  });
+
   it('converts to hex', () => {
     const val = hex('ff');
 
