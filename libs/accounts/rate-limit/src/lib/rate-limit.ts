@@ -112,24 +112,18 @@ export class RateLimit {
    * @returns True if the check should be skipped.
    */
   skip(action: string, opts: BlockOnOpts) {
-    let skipped = false;
-
-    if (opts.ip != null && this.config.ignoreIPs?.some((x) => opts.ip === x)) {
-      this.statsd?.increment('rate_limit.ignore.ip');
-      skipped = true;
-    } else if (
-      opts.uid != null &&
-      this.config.ignoreUIDs?.some((x) => opts.uid === x)
-    ) {
-      this.statsd?.increment('rate_limit.ignore.uid');
-      skipped = true;
-    } else if (
+    const ignoredIp =
+      opts.ip != null && this.config.ignoreIPs?.some((x) => opts.ip === x);
+    const ignoredUid =
+      opts.uid != null && this.config.ignoreUIDs?.some((x) => opts.uid === x);
+    const ignoredEmail =
       opts.email != null &&
-      this.config.ignoreEmails?.some((x) => opts.email?.match(x))
-    ) {
-      this.statsd?.increment('rate_limit.ignore.email');
-      skipped = true;
-    }
+      this.config.ignoreEmails?.some((x) => opts.email?.match(x));
+    const skipped = ignoredIp || ignoredUid || ignoredEmail;
+
+    if (ignoredIp) this.statsd?.increment('rate_limit.ignore.ip');
+    if (ignoredUid) this.statsd?.increment('rate_limit.ignore.uid');
+    if (ignoredEmail) this.statsd?.increment('rate_limit.ignore.email');
 
     if (skipped) {
       this.bqWriter?.write({
