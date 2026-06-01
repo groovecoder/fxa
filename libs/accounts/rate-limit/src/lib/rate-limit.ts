@@ -9,7 +9,8 @@ import {
   BlockOn,
   BlockOnOpts,
   SearchOpts,
-  RateLimitCheckEvent,
+  RateLimitConfig,
+  RateLimitEventWriter,
 } from './models';
 import { ActionNotFound, MissingOption } from './error';
 import {
@@ -37,15 +38,10 @@ export class RateLimit {
    * @param redis A Redis client
    */
   constructor(
-    public readonly config: {
-      rules: Record<string, Rule[]>;
-      ignoreIPs?: Array<string>;
-      ignoreEmails?: Array<string>;
-      ignoreUIDs?: Array<string>;
-    },
+    public readonly config: RateLimitConfig,
     private readonly redis: Redis,
     private readonly statsd?: StatsD,
-    private readonly bqWriter?: { write: (event: RateLimitCheckEvent) => void }
+    private readonly bqWriter?: RateLimitEventWriter
   ) {}
 
   /**
@@ -111,8 +107,9 @@ export class RateLimit {
    * Determines if a check can be skipped, due to an ignored ip, email, or uid.
    * When testing and developing it's often helpful to disable customs rules for
    * certain users.
+   * @param action - The action being checked. Required so BQ events include context.
    * @param opts - The current properties being checked.
-   * @returns
+   * @returns True if the check should be skipped.
    */
   skip(action: string, opts: BlockOnOpts) {
     let skipped = false;

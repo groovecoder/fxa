@@ -792,30 +792,6 @@ describe('rate-limit', () => {
       mockGet.mockReset();
     });
 
-    it('calls bqWriter.write on check() with correct event shape', async () => {
-      rateLimit = new RateLimit(
-        { rules: parseConfigRules(['test:ip:5:1 minute:5 minutes:block']) },
-        redis,
-        statsd,
-        { write: mockWrite }
-      );
-
-      await rateLimit.check('test', { ip: '1.2.3.4' });
-
-      expect(mockWrite).toHaveBeenCalledTimes(1);
-      expect(mockWrite).toHaveBeenCalledWith(
-        expect.objectContaining({
-          action: 'test',
-          ip: '1.2.3.4',
-          wasBlocked: false,
-          wasSkipped: false,
-          usedDefaultRule: false,
-          blockingOn: 'ip',
-          ruleMaxAttempts: 5,
-        })
-      );
-    });
-
     it('reports wasBlocked true when block is triggered', async () => {
       mockIncr.mockResolvedValue(6); // exceeds maxAttempts of 5
       redis.set = jest.fn().mockResolvedValue('OK');

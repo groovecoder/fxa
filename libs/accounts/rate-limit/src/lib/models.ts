@@ -101,6 +101,28 @@ export type SearchOpts = {
   uid?: string;
 };
 
+/** Writer interface for emitting rate-limit check events (e.g. to BigQuery). */
+export interface RateLimitEventWriter {
+  write(event: RateLimitCheckEvent): void;
+}
+
+/**
+ * Configuration for the RateLimit constructor.
+ *
+ * `rules` is a map of action name → Rule[]. Each rule string in config is
+ * parsed into this structure by `parseRules` in config.ts. The DSL format is:
+ *   action:blockOn:maxAttempts:windowDuration:blockDuration:policy
+ *
+ * A special "default" key provides fallback rules for actions without
+ * explicit entries.
+ */
+export type RateLimitConfig = {
+  rules: Record<string, Rule[]>;
+  ignoreIPs?: Array<string>;
+  ignoreEmails?: Array<string>;
+  ignoreUIDs?: Array<string>;
+};
+
 /** Event emitted for every RateLimit.check() call, sent to BigQuery for analytics. */
 export type RateLimitCheckEvent = {
   /** When the check occurred */
