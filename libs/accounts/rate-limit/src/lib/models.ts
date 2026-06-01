@@ -100,3 +100,37 @@ export type SearchOpts = {
   email?: string;
   uid?: string;
 };
+
+/** Event emitted for every RateLimit.check() call, sent to BigQuery for analytics. */
+export type RateLimitCheckEvent = {
+  /** When the check occurred */
+  timestamp: number;
+  /** The action being checked */
+  action: string;
+  /** Client IP address */
+  ip?: string;
+  /** User email */
+  email?: string;
+  /** User ID */
+  uid?: string;
+  /** Which attribute the matched rule counts on */
+  blockingOn?: string;
+  /** Max attempts allowed by the matched rule */
+  ruleMaxAttempts?: number;
+  /** Window duration (seconds) of the matched rule */
+  ruleWindowSeconds?: number;
+  /** Block duration (seconds) of the matched rule */
+  ruleBlockSeconds?: number;
+  /** Current attempt count at time of check */
+  currentAttempts?: number;
+  /** Whether this check resulted in a block or ban */
+  wasBlocked: boolean;
+  /** The policy that triggered (block, ban, report) */
+  blockPolicy?: string;
+  /** How long the block lasts (seconds) */
+  blockDurationSeconds?: number;
+  /** Whether the check was skipped due to ignore lists */
+  wasSkipped: boolean;
+  /** Whether the default rule was used instead of an action-specific rule */
+  usedDefaultRule: boolean;
+};

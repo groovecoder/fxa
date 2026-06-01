@@ -3,7 +3,14 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { Redis } from 'ioredis';
-import { BlockStatus, Rule, BlockOn, BlockOnOpts, SearchOpts } from './models';
+import {
+  BlockStatus,
+  Rule,
+  BlockOn,
+  BlockOnOpts,
+  SearchOpts,
+  RateLimitCheckEvent,
+} from './models';
 import { ActionNotFound, MissingOption } from './error';
 import {
   createBlockRecord,
@@ -37,7 +44,8 @@ export class RateLimit {
       ignoreUIDs?: Array<string>;
     },
     private readonly redis: Redis,
-    private readonly statsd?: StatsD
+    private readonly statsd?: StatsD,
+    private readonly bqWriter?: { write: (event: RateLimitCheckEvent) => void }
   ) {}
 
   /**
@@ -106,29 +114,40 @@ export class RateLimit {
    * @param opts - The current properties being checked.
    * @returns
    */
-  skip(opts: BlockOnOpts) {
+  skip(action: string, opts: BlockOnOpts) {
+    let skipped = false;
+
     if (opts.ip != null && this.config.ignoreIPs?.some((x) => opts.ip === x)) {
       this.statsd?.increment('rate_limit.ignore.ip');
-      return true;
-    }
-
-    if (
+      skipped = true;
+    } else if (
       opts.uid != null &&
       this.config.ignoreUIDs?.some((x) => opts.uid === x)
     ) {
       this.statsd?.increment('rate_limit.ignore.uid');
-      return true;
-    }
-
-    if (
+      skipped = true;
+    } else if (
       opts.email != null &&
       this.config.ignoreEmails?.some((x) => opts.email?.match(x))
     ) {
       this.statsd?.increment('rate_limit.ignore.email');
-      return true;
+      skipped = true;
     }
 
-    return false;
+    if (skipped) {
+      this.bqWriter?.write({
+        timestamp: Date.now(),
+        action,
+        ip: opts.ip,
+        email: opts.email,
+        uid: opts.uid,
+        wasBlocked: false,
+        wasSkipped: true,
+        usedDefaultRule: false,
+      });
+    }
+
+    return skipped;
   }
 
   /**
@@ -147,7 +166,9 @@ export class RateLimit {
     // also the lightest check.
     const bans = await this.findBans(now, opts);
     if (bans.length > 0) {
-      return getLargestRetryAfter(bans);
+      const result = getLargestRetryAfter(bans);
+      this.emitCheckEvent(now, action, opts, result, [], false);
+      return result;
     }
 
     // Second, see if there's any outstanding blocks. If so they should get blocked
@@ -158,17 +179,20 @@ export class RateLimit {
     // If an active block is located, short circuit and return the block
     const block = this.determineBlockStatus(action, blocks);
     if (block) {
+      this.emitCheckEvent(now, action, opts, block, rules, false);
       return block;
     }
 
     // Otherwise, start counting attempts for applicable rules.
     const newBlocks = new Array<BlockStatus>();
+    const attemptCounts = new Map<string, number>();
     const addAttempt = async (rule: Rule, blockedValue: string) => {
       // Check to see if there are any blocks or bans that currently exist in Redis.
       // Create a new block/ban and add set of openBlocks.
       const attemptsKey = getKey('attempts', action, rule, blockedValue);
 
       const attempts = await this.redis.incr(attemptsKey);
+      attemptCounts.set(rule.blockingOn, attempts);
       if (attempts === 1) {
         await this.redis.expire(attemptsKey, rule.windowDurationInSeconds);
       }
@@ -212,7 +236,49 @@ export class RateLimit {
     await Promise.all(rules.map((x) => addAttempt(x.rule, x.blockedValue)));
 
     // If new blocks were added, return the one with the largest retryAfter value.
-    return this.determineBlockStatus(action, newBlocks);
+    const result = this.determineBlockStatus(action, newBlocks);
+    this.emitCheckEvent(now, action, opts, result, rules, false, attemptCounts);
+    return result;
+  }
+
+  /**
+   * Emits a BigQuery check event. Non-blocking, fire-and-forget.
+   */
+  private emitCheckEvent(
+    now: number,
+    action: string,
+    opts: BlockOnOpts,
+    result: BlockStatus | null,
+    rules: Array<{ rule: Rule; isDefault: boolean; blockedValue: string }>,
+    wasSkipped: boolean,
+    attemptCounts?: Map<string, number>
+  ) {
+    if (!this.bqWriter) {
+      return;
+    }
+
+    const firstRule = rules[0];
+    this.bqWriter.write({
+      timestamp: now,
+      action,
+      ip: opts.ip,
+      email: opts.email,
+      uid: opts.uid,
+      blockingOn: result?.blockingOn ?? firstRule?.rule.blockingOn,
+      ruleMaxAttempts: firstRule?.rule.maxAttempts,
+      ruleWindowSeconds: firstRule?.rule.windowDurationInSeconds,
+      ruleBlockSeconds: firstRule?.rule.blockDurationInSeconds,
+      currentAttempts: attemptCounts?.get(
+        firstRule?.rule.blockingOn
+      ),
+      wasBlocked: result != null,
+      blockPolicy: result?.policy,
+      blockDurationSeconds: result
+        ? Math.round(result.duration / 1000)
+        : undefined,
+      wasSkipped,
+      usedDefaultRule: firstRule?.isDefault ?? false,
+    });
   }
 
   /**
